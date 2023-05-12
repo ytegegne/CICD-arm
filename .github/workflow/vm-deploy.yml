@@ -1,0 +1,38 @@
+name: DeployJSON
+on:
+     # automate deployment on push to master branch only and only when ARM template or yaml file is modified
+    push:
+      branches:
+        - master
+      paths:
+        - ".github/workflows/deploy.yml"
+        - "azuredeploy.json"
+
+jobs:
+  build:
+      # use ubuntu to execute the build
+    runs-on: ubuntu-latest
+ 
+    steps:
+      # checkout code from repo
+      - name: checkout code from repo
+        uses: actions/checkout@master
+       
+      # login to azure account with service principal 
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # deploy ARM template with inline AZ CLI command
+      - name: Deploy ARM Template
+      # define required arguments for AZ CLI command 
+        env:
+          RESOURCE_GROUP: rg-appservice-test-01
+          TEMPLATEFILE: azuredeploy.json
+          PARAMETERSFILE: azuredeploy.parameters.json      
+        uses: azure/CLI@v1
+        with:
+      # Execute AZ CLI command
+          inlineScript: |
+            az deployment group create --resource-group $RESOURCE_GROUP --template-file $TEMPLATEFILE --parameters $PARAMETERSFILE
